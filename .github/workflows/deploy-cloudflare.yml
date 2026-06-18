@@ -1,0 +1,68 @@
+name: Deploy Cloudflare Apps
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/deploy-cloudflare.yml"
+      - "apps/server/**"
+      - "apps/client/**"
+      - "package.json"
+      - "bun.lock"
+      - "turbo.json"
+      - "tsconfig.base.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-cloudflare-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Build and deploy client/server
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.14"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build
+        run: bun run build
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+
+      - name: Deploy server Worker
+        id: deploy-server
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/server
+          packageManager: bun
+          command: deploy
+
+      - name: Deploy client Pages
+        id: deploy-client
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          packageManager: bun
+          command: pages deploy apps/client/dist --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT_NAME }}
+
+      - name: Print deployment URLs
+        run: |
+          echo "Server: ${{ steps.deploy-server.outputs.deployment-url }}"
+          echo "Client: ${{ steps.deploy-client.outputs.deployment-url }}"

@@ -45,7 +45,11 @@ program
   .argument("<file>", "HTML document file to store")
   .description("Store an HTML document on the AI Documents server")
   .option("-i, --id <id>", "Document id. Defaults to the file name without extension.")
-  .option("-s, --server <url>", "Server base URL", defaultServerUrl)
+  .option(
+    "-s, --server <url>",
+    "Server base URL. Defaults to AI_DOCUMENTS_SERVER_URL or http://localhost:8787.",
+    defaultServerUrl
+  )
   .action(async (file: string, options: SaveOptions) => {
     try {
       const id = options.id ?? inferDocumentId(file);

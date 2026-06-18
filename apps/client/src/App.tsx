@@ -1,5 +1,5 @@
 import "./styles.css";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 const defaultServerUrl =
   import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, "") ?? "http://localhost:8787";
@@ -13,21 +13,18 @@ type DocumentMetadata = {
 export function App() {
   const searchParams = new URLSearchParams(window.location.search);
   const initialDocumentId = searchParams.get("document") ?? "demo";
-  const initialServerUrl = searchParams.get("server") ?? defaultServerUrl;
-  const [serverUrl, setServerUrl] = useState(initialServerUrl);
   const [documentId, setDocumentId] = useState(initialDocumentId);
   const [documents, setDocuments] = useState<DocumentMetadata[]>([]);
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [status, setStatus] = useState("Loading documents");
-  const normalizedServerUrl = useMemo(() => serverUrl.replace(/\/+$/, ""), [serverUrl]);
-  const documentUrl = `${normalizedServerUrl}/documents/${encodeURIComponent(documentId)}`;
+  const documentUrl = `${defaultServerUrl}/documents/${encodeURIComponent(documentId)}`;
 
   useEffect(() => {
     const controller = new AbortController();
 
     setStatus("Loading documents");
 
-    fetch(`${normalizedServerUrl}/documents`, {
+    fetch(`${defaultServerUrl}/documents`, {
       signal: controller.signal
     })
       .then(async (response) => {
@@ -54,7 +51,7 @@ export function App() {
       });
 
     return () => controller.abort();
-  }, [documentId, normalizedServerUrl]);
+  }, [documentId]);
 
   return (
     <main className={`app-shell ${isSidebarCollapsed ? "is-sidebar-collapsed" : ""}`}>
@@ -85,17 +82,6 @@ export function App() {
           >
             x
           </button>
-        </div>
-
-        <div className="server-control">
-          <label>
-            <span>Server</span>
-            <input
-              value={serverUrl}
-              onChange={(event) => setServerUrl(event.target.value)}
-              aria-label="Server URL"
-            />
-          </label>
         </div>
 
         <div className="document-count">{status}</div>
