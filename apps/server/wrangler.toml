@@ -1,0 +1,19 @@
+name = "ai-documents-server"
+main = "src/index.ts"
+compatibility_date = "2025-06-01"
+
+[[r2_buckets]]
+binding = "DOCUMENTS"
+bucket_name = "ai-documents-html"
+
+[[kv_namespaces]]
+binding = "DOCUMENT_METADATA"
+id = "replace-with-document-metadata-kv-id"
+
+[[durable_objects.bindings]]
+name = "DOCUMENT_COORDINATOR"
+class_name = "DocumentCoordinator"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["DocumentCoordinator"]

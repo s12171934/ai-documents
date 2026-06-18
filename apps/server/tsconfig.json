@@ -1,10 +1,10 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "types": ["bun"],
-    "outDir": "dist",
+    "lib": ["ES2022", "WebWorker"],
+    "types": [],
     "rootDir": "src",
     "noEmit": false
   },
-  "include": ["src"]
+  "include": ["src", "worker-configuration.d.ts"]
 }
