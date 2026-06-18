@@ -19,12 +19,35 @@ type Env = {
 
 const metadataKey = (id: string) => `documents:${id}:metadata`;
 const objectKey = (id: string) => `documents/${id}.html`;
+const documentListKey = "documents:index";
+
+const corsHeaders = {
+  "access-control-allow-origin": "*",
+  "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+  "access-control-allow-headers": "*",
+  "access-control-max-age": "86400"
+};
+
+const withCors = (response: Response) => {
+  const headers = new Headers(response.headers);
+
+  for (const [key, value] of Object.entries(corsHeaders)) {
+    headers.set(key, value);
+  }
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers
+  });
+};
 
 const json = (body: unknown, init?: ResponseInit) =>
   new Response(JSON.stringify(body), {
     ...init,
     headers: {
       "content-type": "application/json; charset=utf-8",
+      ...corsHeaders,
       ...init?.headers
     }
   });
@@ -53,7 +76,30 @@ const getCoordinator = (env: Env, id: string) => {
 
 const bindings = env as Env;
 
-export default new Elysia({ adapter: CloudflareAdapter })
+const readDocumentIds = async () =>
+  (await bindings.DOCUMENT_METADATA.get<string[]>(documentListKey, "json")) ?? [];
+
+const addDocumentId = async (id: string) => {
+  const ids = await readDocumentIds();
+
+  if (ids.includes(id)) return ids;
+
+  const nextIds = [...ids, id].sort((a, b) => a.localeCompare(b));
+
+  await bindings.DOCUMENT_METADATA.put(documentListKey, JSON.stringify(nextIds));
+
+  return nextIds;
+};
+
+const removeDocumentId = async (id: string) => {
+  const nextIds = (await readDocumentIds()).filter((documentId) => documentId !== id);
+
+  await bindings.DOCUMENT_METADATA.put(documentListKey, JSON.stringify(nextIds));
+
+  return nextIds;
+};
+
+const app = new Elysia({ adapter: CloudflareAdapter })
   .get("/", () => ({
     name: "@ai-documents/server",
     runtime: "cloudflare-worker",
@@ -62,6 +108,16 @@ export default new Elysia({ adapter: CloudflareAdapter })
   .get("/health", () => ({
     status: "ok"
   }))
+  .get("/documents", async () => {
+    const ids = await readDocumentIds();
+    const documents = await Promise.all(
+      ids.map((id) => bindings.DOCUMENT_METADATA.get<DocumentMetadata>(metadataKey(id), "json"))
+    );
+
+    return {
+      documents: documents.filter((metadata): metadata is DocumentMetadata => Boolean(metadata))
+    };
+  })
   .post("/documents/:id", async ({ params, request, status }) => {
     const htmlError = requireHtml(request);
     if (htmlError) return htmlError;
@@ -93,6 +149,7 @@ export default new Elysia({ adapter: CloudflareAdapter })
     });
 
     await bindings.DOCUMENT_METADATA.put(metadataKey(params.id), JSON.stringify(metadata));
+    await addDocumentId(params.id);
     await getCoordinator(bindings, params.id).fetch("https://internal/documents/touch", {
       method: "POST",
       body: JSON.stringify(metadata)
@@ -168,6 +225,7 @@ export default new Elysia({ adapter: CloudflareAdapter })
 
     await bindings.DOCUMENTS.delete(metadata.key);
     await bindings.DOCUMENT_METADATA.delete(metadataKey(params.id));
+    await removeDocumentId(params.id);
     await getCoordinator(bindings, params.id).fetch("https://internal/documents/delete", {
       method: "POST"
     });
@@ -175,6 +233,19 @@ export default new Elysia({ adapter: CloudflareAdapter })
     return { ok: true };
   })
   .compile();
+
+export default {
+  async fetch(request: Request) {
+    if (request.method === "OPTIONS") {
+      return new Response(null, {
+        status: 204,
+        headers: corsHeaders
+      });
+    }
+
+    return withCors(await app.fetch(request));
+  }
+};
 
 export class DocumentCoordinator {
   constructor(private readonly state: DurableObjectState) {}
