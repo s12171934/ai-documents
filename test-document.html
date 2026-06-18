@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI Documents Styled Test</title>
+    <style>
+      :root {
+        color: #1f2a30;
+        background: #edf3f6;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 32px;
+      }
+
+      .document {
+        max-width: 920px;
+        margin: 0 auto;
+        border: 1px solid #d2dde3;
+        border-radius: 8px;
+        background: #ffffff;
+        box-shadow: 0 20px 60px rgb(31 42 48 / 12%);
+        overflow: hidden;
+      }
+
+      header {
+        padding: 36px;
+        color: #ffffff;
+        background: linear-gradient(135deg, #1f6f5b, #254f7a);
+      }
+
+      .eyebrow {
+        margin: 0 0 12px;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        opacity: 0.86;
+      }
+
+      h1 {
+        max-width: 680px;
+        margin: 0;
+        font-size: 40px;
+        line-height: 1.08;
+      }
+
+      main {
+        display: grid;
+        gap: 28px;
+        padding: 36px;
+      }
+
+      .summary {
+        margin: 0;
+        color: #536873;
+        font-size: 17px;
+        line-height: 1.75;
+      }
+
+      .badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 34px;
+        border-radius: 999px;
+        padding: 0 13px;
+        color: #164d42;
+        background: #e0f4ee;
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+      }
+
+      .card {
+        border: 1px solid #d8e2e7;
+        border-radius: 8px;
+        padding: 18px;
+        background: #f8fafb;
+      }
+
+      .card strong {
+        display: block;
+        margin-bottom: 8px;
+        color: #1f2a30;
+        font-size: 28px;
+      }
+
+      .card span {
+        color: #647780;
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        border: 1px solid #d8e2e7;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      th,
+      td {
+        padding: 14px 16px;
+        border-bottom: 1px solid #d8e2e7;
+        text-align: left;
+      }
+
+      th {
+        color: #465961;
+        background: #f1f5f7;
+        font-size: 13px;
+        text-transform: uppercase;
+      }
+
+      tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .callout {
+        border-left: 4px solid #1f6f5b;
+        border-radius: 8px;
+        padding: 18px 20px;
+        color: #33454d;
+        background: #eef8f5;
+        line-height: 1.65;
+      }
+
+      footer {
+        padding: 22px 36px;
+        border-top: 1px solid #d8e2e7;
+        color: #647780;
+        background: #f8fafb;
+        font-size: 13px;
+      }
+
+      @media (max-width: 760px) {
+        body {
+          padding: 16px;
+        }
+
+        header,
+        main,
+        footer {
+          padding: 24px;
+        }
+
+        h1 {
+          font-size: 30px;
+        }
+
+        .cards {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media print {
+        body {
+          padding: 0;
+          background: #ffffff;
+        }
+
+        .document {
+          border: 0;
+          box-shadow: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <article class="document">
+      <header>
+        <p class="eyebrow">AI Documents Test</p>
+        <h1>저장된 HTML 문서 스타일 렌더링 확인</h1>
+      </header>
+
+      <main>
+        <p class="summary">
+          이 문서는 Cloudflare Worker가 R2에서 HTML 파일을 읽어 내려주고, 클라이언트가
+          전체 화면 iframe에서 원본 스타일을 그대로 표시하는지 확인하기 위한 샘플입니다.
+        </p>
+
+        <section class="badges" aria-label="테스트 범위">
+          <span class="badge">Self-contained CSS</span>
+          <span class="badge">R2 HTML Storage</span>
+          <span class="badge">Full-screen Viewer</span>
+        </section>
+
+        <section class="cards" aria-label="요약">
+          <div class="card">
+            <strong>1</strong>
+            <span>HTML 파일 하나만 업로드하면 됩니다.</span>
+          </div>
+          <div class="card">
+            <strong>3</strong>
+            <span>CLI, Worker, Client 경로를 함께 검증합니다.</span>
+          </div>
+          <div class="card">
+            <strong>100%</strong>
+            <span>외부 CSS나 이미지 없이 렌더링됩니다.</span>
+          </div>
+        </section>
+
+        <table>
+          <thead>
+            <tr>
+              <th>단계</th>
+              <th>확인 항목</th>
+              <th>기대 결과</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Upload</td>
+              <td>CLI save command</td>
+              <td>문서가 R2에 저장됨</td>
+            </tr>
+            <tr>
+              <td>List</td>
+              <td>GET /documents</td>
+              <td>사이드바 목록에 표시됨</td>
+            </tr>
+            <tr>
+              <td>View</td>
+              <td>GET /documents/:id</td>
+              <td>스타일이 적용된 HTML이 전체 화면에 표시됨</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout">
+          업로드 예시:
+          <code>ai-documents save test-document.html --id test-document</code>
+        </div>
+      </main>
+
+      <footer>Generated for AI Documents local integration testing.</footer>
+    </article>
+  </body>
+</html>
