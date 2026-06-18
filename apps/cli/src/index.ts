@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { Command } from "commander";
+import { readFile } from "node:fs/promises";
 
 const program = new Command();
 const defaultServerUrl = process.env.AI_DOCUMENTS_SERVER_URL ?? "http://localhost:8787";
@@ -19,13 +20,15 @@ const inferDocumentId = (filePath: string) => {
 };
 
 const readHtmlFile = async (filePath: string) => {
-  const file = Bun.file(filePath);
+  try {
+    return await readFile(filePath, "utf8");
+  } catch (error) {
+    if (error instanceof Error && "code" in error && error.code === "ENOENT") {
+      throw new Error(`File not found: ${filePath}`);
+    }
 
-  if (!(await file.exists())) {
-    throw new Error(`File not found: ${filePath}`);
+    throw error;
   }
-
-  return file.text();
 };
 
 program

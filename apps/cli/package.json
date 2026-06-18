@@ -1,5 +1,5 @@
 {
-  "name": "@ai-documents/cli",
+  "name": "@s-dante/cli",
   "version": "0.0.0",
   "type": "module",
   "bin": {
