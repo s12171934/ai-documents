@@ -4,14 +4,14 @@
 
 - `apps/server`: Cloudflare Workers
 - `apps/client`: Cloudflare Pages
-- `apps/cli`: npm 패키지 `@ai-documents/cli`
+- `apps/cli`: npm 패키지 `@s-dante/cli`
 
 ## GitHub Actions
 
 | 워크플로 | 파일 | 실행 조건 | 역할 |
 | --- | --- | --- | --- |
 | Deploy Cloudflare Apps | `.github/workflows/deploy-cloudflare.yml` | `main` 브랜치 push, 수동 실행 | 전체 빌드 후 server Worker와 client Pages 배포 |
-| Publish CLI | `.github/workflows/publish-cli.yml` | `cli-v*` 태그 push, 수동 실행 | CLI 빌드 후 `@ai-documents/cli`를 npm에 publish |
+| Publish CLI | `.github/workflows/publish-cli.yml` | `cli-v*` 태그 push, 수동 실행 | CLI 빌드 후 `@s-dante/cli`를 npm에 publish |
 
 ## GitHub Secrets
 
@@ -21,7 +21,7 @@ GitHub 저장소의 **Settings → Secrets and variables → Actions → Secrets
 | --- | --- | --- |
 | `CLOUDFLARE_API_TOKEN` | client/server 배포 | Wrangler가 Cloudflare 리소스를 배포하기 위해 사용하는 API 토큰 |
 | `CLOUDFLARE_ACCOUNT_ID` | client/server 배포 | Workers, Pages, R2, KV, Durable Object가 속한 Cloudflare 계정 ID |
-| `NPM_TOKEN` | CLI publish | `@ai-documents/cli`를 npm에 publish할 수 있는 npm 토큰 |
+| `NPM_TOKEN` | CLI publish | `@s-dante/cli`를 npm에 publish할 수 있는 npm 토큰 |
 
 ## GitHub Variables
 
@@ -135,7 +135,7 @@ CLI 패키지는 scoped public 패키지로 배포됩니다.
 배포 후 사용자는 아래처럼 설치하고 사용할 수 있습니다.
 
 ```bash
-npm install -g @ai-documents/cli
+npm install -g @s-dante/cli
 export AI_DOCUMENTS_SERVER_URL=https://your-worker-url
 ai-documents save test-document.html --id test-document
 ```

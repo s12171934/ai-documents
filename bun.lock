@@ -9,8 +9,8 @@
       },
     },
     "apps/cli": {
-      "name": "@ai-documents/cli",
-      "version": "0.0.0",
+      "name": "@s-dante/cli",
+      "version": "0.0.1",
       "bin": {
         "ai-documents": "./dist/index.js",
       },
@@ -50,8 +50,6 @@
     },
   },
   "packages": {
-    "@ai-documents/cli": ["@ai-documents/cli@workspace:apps/cli"],
-
     "@ai-documents/client": ["@ai-documents/client@workspace:apps/client"],
 
     "@ai-documents/server": ["@ai-documents/server@workspace:apps/server"],
@@ -229,6 +227,8 @@
     "@rolldown/binding-win32-x64-msvc": ["@rolldown/binding-win32-x64-msvc@1.0.3", "", { "os": "win32", "cpu": "x64" }, "sha512-eXB7CHuaQdqmJcc3koCNtNPmT/bj2gc999kUFgBxG8Ac0NdgXc4rkCHhqrgrhN3zddvvvrgzj1e90SuSfmyIXA=="],
 
     "@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.1", "", {}, "sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw=="],
+
+    "@s-dante/cli": ["@s-dante/cli@workspace:apps/cli"],
 
     "@sinclair/typebox": ["@sinclair/typebox@0.34.49", "", {}, "sha512-brySQQs7Jtn0joV8Xh9ZV/hZb9Ozb0pmazDIASBkYKCjXrXU3mpcFahmK/z4YDhGkQvP9mWJbVyahdtU5wQA+A=="],
 

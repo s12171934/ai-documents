@@ -9,13 +9,13 @@
   ],
   "scripts": {
     "build": "turbo run build",
-    "dev": "turbo run dev --filter !@ai-documents/cli",
+    "dev": "turbo run dev --filter !@s-dante/cli",
     "lint": "turbo run lint",
     "test": "turbo run test",
     "clean": "turbo run clean && rm -rf node_modules .turbo",
     "dev:client": "bun --filter @ai-documents/client dev",
     "dev:server": "bun --filter @ai-documents/server dev",
-    "dev:cli": "bun --filter @ai-documents/cli dev"
+    "dev:cli": "bun --filter @s-dante/cli dev"
   },
   "devDependencies": {
     "turbo": "^2.5.4"

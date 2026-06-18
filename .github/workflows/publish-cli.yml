@@ -33,7 +33,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Build CLI
-        run: bun --filter @ai-documents/cli build
+        run: bun --filter @s-dante/cli build
 
       - name: Publish
         run: npm publish --access public
