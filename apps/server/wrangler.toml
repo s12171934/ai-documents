@@ -8,7 +8,7 @@ bucket_name = "ai-documents-html"
 
 [[kv_namespaces]]
 binding = "DOCUMENT_METADATA"
-id = "replace-with-document-metadata-kv-id"
+id = "daf402e090c5491a97a5b099bb4e6d57"
 
 [[durable_objects.bindings]]
 name = "DOCUMENT_COORDINATOR"
