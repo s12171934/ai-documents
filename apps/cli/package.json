@@ -3,7 +3,11 @@
   "version": "0.0.1",
   "type": "module",
   "bin": {
-    "ai-documents": "./dist/index.js"
+    "ai-documents": "dist/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/s12171934/ai-documents.git"
   },
   "files": [
     "dist"

@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   publish:
@@ -26,7 +27,7 @@ jobs:
       - name: Setup Node registry
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "24"
           registry-url: "https://registry.npmjs.org"
 
       - name: Install dependencies
@@ -38,5 +39,3 @@ jobs:
       - name: Publish
         run: npm publish --access public
         working-directory: apps/cli
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
