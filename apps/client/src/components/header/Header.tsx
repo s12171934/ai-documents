@@ -49,11 +49,11 @@ export function Header() {
       <GlassCard
         className="header-glass"
         contentClassName="header-glass-content"
-        blur={1000}
+        blur={3}
         distortion={30}
         chromaticAberration={0}
         backgroundColor="white"
-        backgroundOpacity={0.8}
+        backgroundOpacity={0.07}
         borderColor="white"
         borderOpacity={0.82}
         borderRadius={20}
@@ -71,7 +71,9 @@ export function Header() {
       <button
         className="sidebar-fab"
         type="button"
-        aria-label={isSidebarOpen ? "Close document list" : "Open document list"}
+        aria-label={
+          isSidebarOpen ? "Close document list" : "Open document list"
+        }
         title={isSidebarOpen ? "Close document list" : "Open document list"}
         onClick={isSidebarOpen ? closeSidebarOverlay : openSidebarOverlay}
       >

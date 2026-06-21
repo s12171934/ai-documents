@@ -5,7 +5,7 @@
   left: 14px;
   right: 14px;
   height: 4.25rem;
-  opacity: 0.92;
+  opacity: 1;
   transition:
     left 180ms ease,
     right 180ms ease;
