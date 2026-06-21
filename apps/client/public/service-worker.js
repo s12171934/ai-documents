@@ -1,28 +1,24 @@
 self.addEventListener("push", (event) => {
   const payload = event.data?.json() ?? { type: "document.updated" };
+  const documentId = payload.document?.id ?? "document";
 
   event.waitUntil(
-    self.clients
-      .matchAll({
-        type: "window",
-        includeUncontrolled: true,
-      })
-      .then((clients) => {
-        for (const client of clients) {
-          client.postMessage(payload);
-        }
-
-        if (clients.length > 0) {
-          return undefined;
-        }
-
-        const documentId = payload.document?.id ?? "document";
-
-        return self.registration.showNotification("Document updated", {
-          body: `${documentId} is ready to view.`,
-          data: payload,
-        });
+    Promise.all([
+      self.clients
+        .matchAll({
+          type: "window",
+          includeUncontrolled: true,
+        })
+        .then((clients) => {
+          for (const client of clients) {
+            client.postMessage(payload);
+          }
+        }),
+      self.registration.showNotification("Document updated", {
+        body: `${documentId} is ready to view.`,
+        data: payload,
       }),
+    ]),
   );
 });
 

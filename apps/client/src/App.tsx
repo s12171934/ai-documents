@@ -143,7 +143,7 @@ export function App() {
   const [documentHtml, setDocumentHtml] = useState("");
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [status, setStatus] = useState("Loading documents");
-  const [refreshToken, setRefreshToken] = useState(0);
+  const [documentListRefreshToken, setDocumentListRefreshToken] = useState(0);
   const documentUrl = `${defaultServerUrl}/documents/${encodeURIComponent(documentId)}`;
   const documentPageUrl = getDocumentPageUrl(documentId);
   const currentDocument = documents.find((document) => document.id === documentId);
@@ -174,13 +174,7 @@ export function App() {
         return;
       }
 
-      const nextDocumentId = event.data.document?.id;
-
-      if (typeof nextDocumentId === "string") {
-        setDocumentId(nextDocumentId);
-      }
-
-      setRefreshToken((current) => current + 1);
+      setDocumentListRefreshToken((current) => current + 1);
     };
 
     navigator.serviceWorker?.addEventListener("message", handleServiceWorkerMessage);
@@ -225,7 +219,7 @@ export function App() {
       });
 
     return () => controller.abort();
-  }, [documentUrl, refreshToken]);
+  }, [documentUrl]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -271,7 +265,7 @@ export function App() {
       });
 
     return () => controller.abort();
-  }, [documentId, refreshToken]);
+  }, [documentId, documentListRefreshToken]);
 
   return (
     <div className={`app ${isDarkMode ? "is-dark-mode" : ""}`}>
