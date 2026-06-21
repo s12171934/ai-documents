@@ -84,55 +84,92 @@ const base64UrlToUint8Array = (value: string) => {
   return bytes;
 };
 
-const registerPushUpdates = async () => {
-  if (
-    !("serviceWorker" in navigator) ||
-    !("PushManager" in window) ||
-    !("Notification" in window)
-  ) {
-    return;
+const arrayBufferToBase64Url = (value: ArrayBuffer | null) => {
+  if (!value) return "";
+
+  let binary = "";
+
+  for (const byte of new Uint8Array(value)) {
+    binary += String.fromCharCode(byte);
   }
 
-  const registration = await navigator.serviceWorker.register("/service-worker.js");
-  const permission = await Notification.requestPermission();
+  return window
+    .btoa(binary)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+};
 
-  if (permission !== "granted") {
-    return;
-  }
-
-  const existingSubscription = await registration.pushManager.getSubscription();
-
-  if (existingSubscription) {
-    await fetch(`${defaultServerUrl}/push/subscriptions`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-      },
-      body: JSON.stringify(existingSubscription),
-    });
-
-    return;
-  }
-
-  const keyResponse = await fetch(`${defaultServerUrl}/push/vapid-public-key`);
-
-  if (!keyResponse.ok) {
-    return;
-  }
-
-  const { publicKey } = (await keyResponse.json()) as { publicKey: string };
-  const subscription = await registration.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: base64UrlToUint8Array(publicKey),
-  });
-
-  await fetch(`${defaultServerUrl}/push/subscriptions`, {
+const savePushSubscription = async (subscription: PushSubscription) => {
+  const response = await fetch(`${defaultServerUrl}/push/subscriptions`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
     },
     body: JSON.stringify(subscription),
   });
+
+  if (!response.ok) {
+    throw new Error(`Push subscription failed with ${response.status}`);
+  }
+};
+
+const registerPushUpdates = async () => {
+  if (
+    !("serviceWorker" in navigator) ||
+    !("PushManager" in window) ||
+    !("Notification" in window)
+  ) {
+    throw new Error("This browser does not support push notifications.");
+  }
+
+  if (!window.isSecureContext) {
+    throw new Error("Push notifications require HTTPS or localhost.");
+  }
+
+  const registration = await navigator.serviceWorker.register("/service-worker.js");
+  await navigator.serviceWorker.ready;
+  const permission =
+    Notification.permission === "granted"
+      ? "granted"
+      : await Notification.requestPermission();
+
+  if (permission !== "granted") {
+    throw new Error(
+      permission === "denied"
+        ? "Notifications are blocked in browser settings."
+        : "Notification permission was not granted.",
+    );
+  }
+
+  const keyResponse = await fetch(`${defaultServerUrl}/push/vapid-public-key`);
+
+  if (!keyResponse.ok) {
+    throw new Error(`Push is not configured on the server (${keyResponse.status}).`);
+  }
+
+  const { publicKey } = (await keyResponse.json()) as { publicKey: string };
+  const existingSubscription = await registration.pushManager.getSubscription();
+  const existingApplicationServerKey = arrayBufferToBase64Url(
+    existingSubscription?.options.applicationServerKey ?? null,
+  );
+
+  if (existingSubscription && existingApplicationServerKey === publicKey) {
+    await savePushSubscription(existingSubscription);
+
+    return;
+  }
+
+  if (existingSubscription) {
+    await existingSubscription.unsubscribe();
+  }
+
+  const subscription = await registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: base64UrlToUint8Array(publicKey),
+  });
+
+  await savePushSubscription(subscription);
 };
 
 export function App() {
@@ -163,9 +200,34 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    registerPushUpdates().catch(() => {
-      // Push is an enhancement; normal document loading still works without it.
+    if (!("Notification" in window)) return;
+    if (Notification.permission === "denied") return;
+
+    const register = () => {
+      registerPushUpdates().catch((error: unknown) => {
+        console.warn("Failed to enable push notifications", error);
+      });
+    };
+
+    if (Notification.permission === "granted") {
+      register();
+
+      return;
+    }
+
+    window.addEventListener("pointerdown", register, {
+      capture: true,
+      once: true,
     });
+    window.addEventListener("keydown", register, {
+      capture: true,
+      once: true,
+    });
+
+    return () => {
+      window.removeEventListener("pointerdown", register, { capture: true });
+      window.removeEventListener("keydown", register, { capture: true });
+    };
   }, []);
 
   useEffect(() => {
