@@ -1,23 +1,34 @@
-import "./styles.css";
+import { Header, openSidebarOverlay } from "./components/header";
+import "./styles/global.css";
+import "./styles/app.css";
 import { useEffect, useState } from "react";
+import type { DocumentMetadata } from "./types";
+import { setSidebarOverlaySnapshot } from "./components/sidebar";
 
 const defaultServerUrl =
-  import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, "") ?? "http://localhost:8787";
-
-type DocumentMetadata = {
-  id: string;
-  byteLength: number;
-  updatedAt: string;
-};
+  import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, "") ??
+  "http://localhost:8787";
 
 export function App() {
   const searchParams = new URLSearchParams(window.location.search);
   const initialDocumentId = searchParams.get("document") ?? "demo";
   const [documentId, setDocumentId] = useState(initialDocumentId);
   const [documents, setDocuments] = useState<DocumentMetadata[]>([]);
-  const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [status, setStatus] = useState("Loading documents");
   const documentUrl = `${defaultServerUrl}/documents/${encodeURIComponent(documentId)}`;
+
+  useEffect(() => {
+    setSidebarOverlaySnapshot({
+      documents,
+      documentId,
+      status,
+      onSelectDocument: setDocumentId,
+    });
+  }, [documents, documentId, status]);
+
+  useEffect(() => {
+    openSidebarOverlay();
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -25,7 +36,7 @@ export function App() {
     setStatus("Loading documents");
 
     fetch(`${defaultServerUrl}/documents`, {
-      signal: controller.signal
+      signal: controller.signal,
     })
       .then(async (response) => {
         if (!response.ok) {
@@ -37,71 +48,42 @@ export function App() {
       .then(({ documents }) => {
         setDocuments(documents);
 
-        if (documents.length > 0 && !documents.some((document) => document.id === documentId)) {
+        if (
+          documents.length > 0 &&
+          !documents.some((document) => document.id === documentId)
+        ) {
           setDocumentId(documents[0].id);
         }
 
-        setStatus(documents.length > 0 ? `${documents.length} documents` : "No documents");
+        setStatus(
+          documents.length > 0
+            ? `${documents.length} documents`
+            : "No documents",
+        );
       })
       .catch((error: unknown) => {
-        if (error instanceof DOMException && error.name === "AbortError") return;
+        if (error instanceof DOMException && error.name === "AbortError")
+          return;
 
         setDocuments([]);
-        setStatus(error instanceof Error ? error.message : "Failed to load documents");
+        setStatus(
+          error instanceof Error ? error.message : "Failed to load documents",
+        );
       });
 
     return () => controller.abort();
   }, [documentId]);
 
   return (
-    <main className={`app-shell ${isSidebarCollapsed ? "is-sidebar-collapsed" : ""}`}>
-      {isSidebarCollapsed ? (
-        <button
-          className="sidebar-fab"
-          type="button"
-          aria-label="Open document list"
-          title="Open document list"
-          onClick={() => setSidebarCollapsed(false)}
-        >
-          Docs
-        </button>
-      ) : null}
-
-      <aside className="sidebar" aria-label="Documents">
-        <div className="sidebar-header">
-          <div>
-            <p className="eyebrow">AI Documents</p>
-            <strong>Documents</strong>
-          </div>
-          <button
-            className="icon-button"
-            type="button"
-            aria-label="Collapse sidebar"
-            title="Collapse sidebar"
-            onClick={() => setSidebarCollapsed((value) => !value)}
-          >
-            x
-          </button>
-        </div>
-
-        <div className="document-count">{status}</div>
-
-        <nav className="document-list">
-          {documents.map((document) => (
-            <button
-              className={document.id === documentId ? "document-item is-active" : "document-item"}
-              key={document.id}
-              type="button"
-              onClick={() => setDocumentId(document.id)}
-            >
-              <strong>{document.id}</strong>
-              <span>{new Date(document.updatedAt).toLocaleString()}</span>
-            </button>
-          ))}
-        </nav>
-      </aside>
-
-      <iframe className="document-frame" title={`Document ${documentId}`} src={documentUrl} />
-    </main>
+    <div>
+      <Header />
+      <main className="app-shell">
+        <iframe
+          className="document-frame"
+          title={`Document ${documentId}`}
+          src={documentUrl}
+        />
+      </main>
+    </div>
   );
 }

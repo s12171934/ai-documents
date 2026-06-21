@@ -1,0 +1,34 @@
+.header {
+  position: fixed;
+  z-index: 19;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5rem;
+  background: #000;
+}
+
+.sidebar-fab {
+  position: fixed;
+  z-index: 21;
+  top: 16px;
+  left: 16px;
+  min-width: 58px;
+  height: 38px;
+  border: 1px solid #c7d1d8;
+  border-radius: 8px;
+  color: #172026;
+  background: #ffffff;
+  box-shadow: 0 10px 32px rgb(23 32 38 / 16%);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+@media screen and (max-width: 767px) {
+  .header {
+    top: auto;
+    bottom: 0;
+  }
+}
