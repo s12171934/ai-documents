@@ -24,6 +24,8 @@
   width: 100% !important;
   height: 100% !important;
   color: #14242a !important;
+  overflow: hidden;
+  background: rgb(255 255 255 / 14%);
 }
 
 .sidebar-glass .glass-ui-border-layer {
@@ -38,6 +40,13 @@
   min-height: 0;
   display: grid;
   grid-template-rows: auto auto 1fr;
+  opacity: 0;
+  transition: opacity 100ms ease;
+}
+
+.sidebar.is-open .sidebar-content {
+  opacity: 1;
+  transition-delay: 55ms;
 }
 
 .sidebar-header {
