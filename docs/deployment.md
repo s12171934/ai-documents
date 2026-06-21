@@ -32,29 +32,27 @@ GitHub 저장소의 **Settings → Secrets and variables → Actions → Variabl
 | `CLOUDFLARE_PAGES_PROJECT_NAME` | client 배포 | `ai-documents-client` | Cloudflare Pages 프로젝트 이름 |
 | `VITE_API_BASE_URL` | client 빌드 | `https://ai-documents-server.<account>.workers.dev` | Vite 클라이언트 빌드에 포함될 공개 server Worker URL |
 
-## 애플리케이션 환경변수
+## 애플리케이션 설정
 
-클라이언트와 CLI는 서버 주소를 화면이나 명령어에 매번 입력하지 않도록 환경변수를 사용합니다.
+클라이언트는 서버 주소를 화면에 매번 입력하지 않도록 환경변수를 사용합니다. CLI는 홈 디렉터리의 `.dante-config` 파일에 서버 주소를 저장합니다.
 
 | 환경변수 | 사용 위치 | 예시 | 설명 |
 | --- | --- | --- | --- |
 | `VITE_API_BASE_URL` | `apps/client` | `https://ai-documents-server.<account>.workers.dev` | 클라이언트가 문서 목록과 HTML 문서를 가져올 server Worker URL |
-| `AI_DOCUMENTS_SERVER_URL` | `apps/cli` | `https://ai-documents-server.<account>.workers.dev` | CLI가 HTML 문서를 업로드할 server Worker URL |
 
-로컬 개발에서는 예시 파일을 복사해 사용합니다.
+로컬 개발에서는 클라이언트 예시 파일을 복사해 사용합니다.
 
 ```bash
 cp apps/client/.env.example apps/client/.env
-cp apps/cli/.env.example apps/cli/.env
 ```
 
 프로덕션 클라이언트는 GitHub Variable `VITE_API_BASE_URL`을 통해 빌드 시 값이 주입됩니다.
 
-CLI는 npm으로 설치한 뒤 shell 환경변수로 서버 주소를 지정합니다.
+CLI는 npm으로 설치한 뒤 `dante init`으로 서버 주소를 저장합니다.
 
 ```bash
-export AI_DOCUMENTS_SERVER_URL=https://ai-documents-server.<account>.workers.dev
-ai-documents save test-document.html --id test-document
+dante init --server-url https://ai-documents-server.<account>.workers.dev
+dante save test-document.html --id test-document
 ```
 
 ## Cloudflare 리소스
@@ -136,8 +134,8 @@ CLI 패키지는 scoped public 패키지로 배포됩니다.
 
 ```bash
 npm install -g @s-dante/cli
-export AI_DOCUMENTS_SERVER_URL=https://your-worker-url
-ai-documents save test-document.html --id test-document
+dante init --server-url https://your-worker-url
+dante save test-document.html --id test-document
 ```
 
 ## 로컬 스모크 테스트
@@ -157,5 +155,6 @@ bun --filter @ai-documents/client dev
 문서 업로드:
 
 ```bash
-AI_DOCUMENTS_SERVER_URL=http://localhost:8787 bun apps/cli/src/index.ts save test-document.html --id test-document
+bun apps/cli/src/index.ts init --server-url http://localhost:8787
+bun apps/cli/src/index.ts save test-document.html --id test-document
 ```

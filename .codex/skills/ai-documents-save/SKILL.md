@@ -1,15 +1,15 @@
 ---
 name: ai-documents-save
-description: Use when the user asks Codex to write, document, draft, create, generate, render, upload, publish, or store any document-related artifact using this repository's ai-documents CLI. Trigger for documentation, project docs, guides, reports, proposals, memos, specs, briefs, meeting notes, or other document-writing requests when the output can reasonably be delivered as a standalone HTML document and saved with `ai-documents save`.
+description: Use when the user asks Codex to write, document, draft, create, generate, render, upload, publish, or store any document-related artifact using this repository's Dante CLI. Trigger for documentation, project docs, guides, reports, proposals, memos, specs, briefs, meeting notes, or other document-writing requests when the output can reasonably be delivered as a standalone HTML document and saved with `dante save`.
 ---
 
 # AI Documents Save
 
 ## Overview
 
-Use this skill to create a standalone HTML document and save it to the AI Documents server through the `ai-documents` CLI.
+Use this skill to create a standalone HTML document and save it to the AI Documents server through the `dante` CLI.
 
-The expected result is an HTML file on disk plus a successful `ai-documents save ...` command that returns the stored document id and URL.
+The expected result is an HTML file on disk plus a successful `dante save ...` command that returns the stored document id and URL.
 
 ## When to Use
 
@@ -35,22 +35,28 @@ Do not use this skill when the user only wants a quick chat answer, a code chang
 4. Save with the CLI:
    - Prefer the installed command when available:
      ```bash
-     ai-documents save path/to/document.html --id document-id
+     dante save path/to/document.html --id document-id
      ```
    - If no global CLI is available, use the workspace CLI:
      ```bash
      bun --filter @s-dante/cli src/index.ts save path/to/document.html --id document-id
      ```
-   - Add `--server <url>` when the user supplies a server URL or when the target should differ from `AI_DOCUMENTS_SERVER_URL`.
-   - If `AI_DOCUMENTS_SERVER_URL` is not found in the current shell, run the save command from a shell that first sources `~/.zshrc`, for example:
+   - Add `--server <url>` only when the user supplies a server URL or when the target should differ from the Dante config.
+   - If `~/.dante-config` is missing, initialize it and retry the same save command once:
      ```bash
-     source ~/.zshrc; ai-documents save path/to/document.html --id document-id
+     dante init --server-url https://worker.s-dante.com
+     dante save path/to/document.html --id document-id
+     ```
+   - If using the workspace CLI because no global CLI is available, run the matching workspace init before retrying:
+     ```bash
+     bun --filter @s-dante/cli src/index.ts init --server-url https://worker.s-dante.com
+     bun --filter @s-dante/cli src/index.ts save path/to/document.html --id document-id
      ```
 5. Verify the command output includes a successful `Stored <id> (...)` line and a document URL. Report the saved id and URL to the user.
 
 ## Command Execution
 
-Run commands for `@s-dante/cli` immediately without asking the user for confirmation. This includes build, dev, and save commands such as `bun --filter @s-dante/cli build` and `ai-documents save ...`.
+Run commands for `@s-dante/cli` immediately without asking the user for confirmation. This includes build, dev, init, and save commands such as `bun --filter @s-dante/cli build`, `dante init ...`, and `dante save ...`.
 
 If the execution environment itself requires escalation or approval for a command, request that approval through the available tool mechanism and continue as soon as it is granted.
 
@@ -59,12 +65,10 @@ If the execution environment itself requires escalation or approval for a comman
 Use this precedence:
 
 1. Explicit user-provided `--server` or URL.
-2. `AI_DOCUMENTS_SERVER_URL` from the shell environment.
-3. `apps/cli/.env` when it exists and contains `AI_DOCUMENTS_SERVER_URL=...`.
-4. `AI_DOCUMENTS_SERVER_URL` after running `source ~/.zshrc`.
-5. CLI default `http://localhost:8787`.
+2. `AI_DOCUMENTS_SERVER_URL` stored in `~/.dante-config`.
+3. CLI default `https://worker.s-dante.com`.
 
-When using `apps/cli/.env`, pass the value explicitly with `--server` because the published CLI does not automatically load `.env` files.
+Do not rely on shell environment variables or `apps/cli/.env` for the CLI server URL.
 
 ## HTML Quality Bar
 
@@ -82,4 +86,4 @@ Before finishing:
 bun --filter @s-dante/cli build
 ```
 
-Then run the selected `ai-documents save` command. If the server is unreachable, report the exact command prepared and the connection failure; do not claim the document was saved.
+Then run the selected `dante save` command. If the server is unreachable, report the exact command prepared and the connection failure; do not claim the document was saved.

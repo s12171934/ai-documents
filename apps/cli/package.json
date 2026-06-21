@@ -1,9 +1,9 @@
 {
   "name": "@s-dante/cli",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "bin": {
-    "ai-documents": "dist/index.js"
+    "dante": "dist/index.js"
   },
   "repository": {
     "type": "git",
