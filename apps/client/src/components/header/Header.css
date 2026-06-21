@@ -14,7 +14,13 @@
 .header-glass {
   width: 100% !important;
   height: 100% !important;
+  overflow: hidden;
+  border-radius: 20px;
   pointer-events: none;
+}
+
+.header.is-dark-mode .header-glass {
+  background: rgb(0 0 0 / 72%);
 }
 
 .header-glass .glass-ui-border-layer {
@@ -228,6 +234,31 @@
 .header-popover-button-glass,
 .header-popover-button-glass * {
   pointer-events: none;
+}
+
+.header.is-dark-mode .sidebar-fab-glass,
+.header.is-dark-mode .header-action-glass,
+.header.is-dark-mode .header-popover-glass,
+.header.is-dark-mode .header-popover-button-glass {
+  color: #ffffff !important;
+}
+
+.header.is-dark-mode .header-icon {
+  filter: invert(1);
+  opacity: 1;
+}
+
+.header.is-dark-mode .header-popover {
+  color: #ffffff;
+}
+
+.header.is-dark-mode .header-popover dt {
+  color: rgb(255 255 255 / 72%);
+}
+
+.header.is-dark-mode .sidebar-fab:focus-visible,
+.header.is-dark-mode .header-action:focus-visible {
+  outline-color: rgb(255 255 255 / 78%);
 }
 
 @media screen and (min-width: 768px) {

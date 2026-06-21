@@ -43,7 +43,10 @@ const escapeHtmlText = (value: string) =>
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
 
-const withDocumentChrome = (html: string, documentUrl: string) => {
+const withDocumentChrome = (
+  html: string,
+  documentUrl: string,
+) => {
   const baseElement = `<base href="${escapeHtmlAttribute(documentUrl)}">`;
 
   if (/<head[\s>]/i.test(html)) {
@@ -74,6 +77,7 @@ export function App() {
   const [documentId, setDocumentId] = useState(initialDocumentId);
   const [documents, setDocuments] = useState<DocumentMetadata[]>([]);
   const [documentHtml, setDocumentHtml] = useState("");
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const [status, setStatus] = useState("Loading documents");
   const documentUrl = `${defaultServerUrl}/documents/${encodeURIComponent(documentId)}`;
   const documentPageUrl = getDocumentPageUrl(documentId);
@@ -83,10 +87,11 @@ export function App() {
     setSidebarOverlaySnapshot({
       documents,
       documentId,
+      isDarkMode,
       status,
       onSelectDocument: setDocumentId,
     });
-  }, [documents, documentId, status]);
+  }, [documents, documentId, isDarkMode, status]);
 
   useEffect(() => {
     openSidebarOverlay();
@@ -176,11 +181,13 @@ export function App() {
   }, [documentId]);
 
   return (
-    <div>
+    <div className={`app ${isDarkMode ? "is-dark-mode" : ""}`}>
       <Header
         currentDocument={currentDocument}
         documentUrl={documentUrl}
         documentPageUrl={documentPageUrl}
+        isDarkMode={isDarkMode}
+        onToggleDarkMode={() => setIsDarkMode((current) => !current)}
       />
       <main className="app-shell">
         <iframe

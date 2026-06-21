@@ -5,7 +5,9 @@ import { GlassButton, GlassCard } from "react-glass-ui";
 import downloadIcon from "../../assets/download.svg";
 import infoIcon from "../../assets/info.svg";
 import menuBurgerIcon from "../../assets/menu-burger.svg";
+import moonIcon from "../../assets/moon.svg";
 import shareIcon from "../../assets/share.svg";
+import sunIcon from "../../assets/sun.svg";
 import type { DocumentMetadata } from "../../types";
 import { Sidebar, useSidebarOverlaySnapshot } from "../sidebar";
 import "./Header.css";
@@ -19,7 +21,7 @@ function DocumentSidebarOverlay({
   isOpen: boolean;
   close: () => void;
 }) {
-  const { documents, documentId, status, onSelectDocument } =
+  const { documents, documentId, isDarkMode, status, onSelectDocument } =
     useSidebarOverlaySnapshot();
 
   return (
@@ -28,6 +30,7 @@ function DocumentSidebarOverlay({
       documentId={documentId}
       status={status}
       isOpen={isOpen}
+      isDarkMode={isDarkMode}
       onClose={close}
       onSelectDocument={onSelectDocument}
     />
@@ -51,11 +54,14 @@ type HeaderProps = {
   currentDocument?: DocumentMetadata;
   documentUrl: string;
   documentPageUrl: string;
+  isDarkMode: boolean;
+  onToggleDarkMode: () => void;
 };
 
 type HeaderActionButtonProps = {
   children: ReactNode;
   ariaLabel: string;
+  isDarkMode: boolean;
   title: string;
   onClick: () => void | Promise<void>;
 };
@@ -101,9 +107,13 @@ function useCloseOnOutsideClick<T extends HTMLElement>(
 function HeaderActionButton({
   children,
   ariaLabel,
+  isDarkMode,
   title,
   onClick,
 }: HeaderActionButtonProps) {
+  const glassColor = isDarkMode ? "black" : "white";
+  const backgroundOpacity = isDarkMode ? 0.34 : 0.1;
+
   return (
     <button
       className="header-action"
@@ -118,8 +128,8 @@ function HeaderActionButton({
         blur={16}
         distortion={10}
         chromaticAberration={0}
-        backgroundColor="white"
-        backgroundOpacity={0.1}
+        backgroundColor={glassColor}
+        backgroundOpacity={backgroundOpacity}
         borderColor="white"
         borderOpacity={0.48}
         borderRadius={9}
@@ -148,11 +158,16 @@ function HeaderPopover({
   children,
   className = "",
   ariaLabel,
+  isDarkMode,
 }: {
   children: ReactNode;
   className?: string;
   ariaLabel: string;
+  isDarkMode: boolean;
 }) {
+  const glassColor = isDarkMode ? "black" : "white";
+  const backgroundOpacity = isDarkMode ? 0.5 : 0.16;
+
   return (
     <div
       className={`header-popover ${className}`}
@@ -165,8 +180,8 @@ function HeaderPopover({
         blur={2}
         distortion={12}
         chromaticAberration={0}
-        backgroundColor="white"
-        backgroundOpacity={0.16}
+        backgroundColor={glassColor}
+        backgroundOpacity={backgroundOpacity}
         borderColor="white"
         borderOpacity={0.56}
         borderRadius={8}
@@ -190,9 +205,11 @@ function HeaderPopover({
 function FileInfoButton({
   currentDocument,
   fileName,
+  isDarkMode,
 }: {
   currentDocument?: DocumentMetadata;
   fileName: string;
+  isDarkMode: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const popoverRef = useCloseOnOutsideClick<HTMLDivElement>(isOpen, () =>
@@ -203,13 +220,14 @@ function FileInfoButton({
     <div className="header-action-group" ref={popoverRef}>
       <HeaderActionButton
         ariaLabel={`Show file information for ${fileName}`}
+        isDarkMode={isDarkMode}
         title="File information"
         onClick={() => setIsOpen((current) => !current)}
       >
         <HeaderIcon src={infoIcon} />
       </HeaderActionButton>
       {isOpen ? (
-        <HeaderPopover ariaLabel="File info">
+        <HeaderPopover ariaLabel="File info" isDarkMode={isDarkMode}>
           <strong>File information</strong>
           <dl>
             <div>
@@ -242,9 +260,11 @@ function FileInfoButton({
 function DownloadButton({
   documentUrl,
   fileName,
+  isDarkMode,
 }: {
   documentUrl: string;
   fileName: string;
+  isDarkMode: boolean;
 }) {
   const downloadName = fileName.endsWith(".html")
     ? fileName
@@ -253,6 +273,7 @@ function DownloadButton({
   return (
     <HeaderActionButton
       ariaLabel={`Download ${fileName}`}
+      isDarkMode={isDarkMode}
       title="Download"
       onClick={async () => {
         const response = await fetch(documentUrl);
@@ -276,9 +297,11 @@ function DownloadButton({
 function ShareButton({
   documentPageUrl,
   fileName,
+  isDarkMode,
 }: {
   documentPageUrl: string;
   fileName: string;
+  isDarkMode: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [copyLabel, setCopyLabel] = useState("Copy URL");
@@ -290,6 +313,7 @@ function ShareButton({
     <div className="header-action-group" ref={popoverRef}>
       <HeaderActionButton
         ariaLabel={`Share ${fileName}`}
+        isDarkMode={isDarkMode}
         title="Share"
         onClick={() => setIsOpen((current) => !current)}
       >
@@ -299,6 +323,7 @@ function ShareButton({
         <HeaderPopover
           className="header-popover-share"
           ariaLabel="Share document"
+          isDarkMode={isDarkMode}
         >
           <strong>Share document</strong>
           <p>{documentPageUrl}</p>
@@ -317,8 +342,8 @@ function ShareButton({
               blur={14}
               distortion={8}
               chromaticAberration={0}
-              backgroundColor="white"
-              backgroundOpacity={0.18}
+              backgroundColor={isDarkMode ? "black" : "white"}
+              backgroundOpacity={isDarkMode ? 0.46 : 0.18}
               borderColor="white"
               borderOpacity={0.52}
               borderRadius={8}
@@ -342,27 +367,53 @@ function ShareButton({
   );
 }
 
+function DarkModeButton({
+  isDarkMode,
+  onToggleDarkMode,
+}: {
+  isDarkMode: boolean;
+  onToggleDarkMode: () => void;
+}) {
+  return (
+    <HeaderActionButton
+      ariaLabel={isDarkMode ? "Disable dark mode" : "Enable dark mode"}
+      isDarkMode={isDarkMode}
+      title={isDarkMode ? "Disable dark mode" : "Enable dark mode"}
+      onClick={onToggleDarkMode}
+    >
+      <HeaderIcon src={isDarkMode ? moonIcon : sunIcon} />
+    </HeaderActionButton>
+  );
+}
+
 export function Header({
   currentDocument,
   documentUrl,
   documentPageUrl,
+  isDarkMode,
+  onToggleDarkMode,
 }: HeaderProps) {
   const overlayData = useOverlayData();
   const isSidebarOpen = overlayData[sidebarOverlayId]?.isOpen === true;
   const fileName = currentDocument?.id ?? "document";
+  const glassColor = isDarkMode ? "black" : "white";
+  const headerBorderOpacity = isDarkMode ? 0.46 : 0.82;
+  const buttonBackgroundOpacity = isDarkMode ? 0.34 : 0.1;
 
   return (
-    <header className={`header ${isSidebarOpen ? "is-sidebar-open" : ""}`}>
+    <header
+      className={`header ${isSidebarOpen ? "is-sidebar-open" : ""} ${isDarkMode ? "is-dark-mode" : ""}`}
+    >
       <GlassCard
         className="header-glass"
         contentClassName="header-glass-content"
         blur={3}
         distortion={30}
         chromaticAberration={0}
-        backgroundColor="white"
+        backgroundColor={glassColor}
         backgroundOpacity={0.07}
         borderColor="white"
-        borderOpacity={0.82}
+        borderOpacity={headerBorderOpacity}
         borderRadius={20}
         borderSize={1.25}
         brightness={102}
@@ -390,8 +441,8 @@ export function Header({
           blur={16}
           distortion={10}
           chromaticAberration={0}
-          backgroundColor="white"
-          backgroundOpacity={0.1}
+          backgroundColor={glassColor}
+          backgroundOpacity={buttonBackgroundOpacity}
           borderColor="white"
           borderOpacity={0.48}
           borderRadius={9}
@@ -410,9 +461,25 @@ export function Header({
         </GlassButton>
       </button>
       <div className="header-actions" aria-label="Document actions">
-        <FileInfoButton currentDocument={currentDocument} fileName={fileName} />
-        <DownloadButton documentUrl={documentUrl} fileName={fileName} />
-        <ShareButton documentPageUrl={documentPageUrl} fileName={fileName} />
+        <FileInfoButton
+          currentDocument={currentDocument}
+          fileName={fileName}
+          isDarkMode={isDarkMode}
+        />
+        <DownloadButton
+          documentUrl={documentUrl}
+          fileName={fileName}
+          isDarkMode={isDarkMode}
+        />
+        <ShareButton
+          documentPageUrl={documentPageUrl}
+          fileName={fileName}
+          isDarkMode={isDarkMode}
+        />
+        <DarkModeButton
+          isDarkMode={isDarkMode}
+          onToggleDarkMode={onToggleDarkMode}
+        />
       </div>
     </header>
   );

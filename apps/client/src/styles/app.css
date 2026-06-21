@@ -5,6 +5,12 @@
   background: #ffffff;
 }
 
+.app.is-dark-mode,
+.app.is-dark-mode .app-shell {
+  background: black;
+  color: #ffffff;
+}
+
 .document-frame {
   position: fixed;
   inset: 0;
@@ -15,4 +21,8 @@
   height: 100dvh;
   border: 0;
   background: #ffffff;
+}
+
+.app.is-dark-mode .document-frame {
+  background: black;
 }

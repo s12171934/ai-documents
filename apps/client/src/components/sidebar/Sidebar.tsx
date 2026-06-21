@@ -1,5 +1,4 @@
 import { GlassButton, GlassCard } from "react-glass-ui";
-import closeIcon from "../../assets/close.svg";
 import type { DocumentMetadata } from "../../types";
 import "./Sidebar.css";
 
@@ -8,6 +7,7 @@ type SidebarProps = {
   documentId: string;
   status: string;
   isOpen: boolean;
+  isDarkMode: boolean;
   onClose: () => void;
   onSelectDocument: (documentId: string) => void;
 };
@@ -17,21 +17,25 @@ export function Sidebar({
   documentId,
   status,
   isOpen,
+  isDarkMode,
   onClose,
   onSelectDocument,
 }: SidebarProps) {
+  const glassColor = isDarkMode ? "black" : "white";
+  const buttonBackgroundOpacity = isDarkMode ? 0.34 : 0.1;
+
   return (
     <aside
-      className={`sidebar ${isOpen ? "is-open" : ""}`}
+      className={`sidebar ${isOpen ? "is-open" : ""} ${isDarkMode ? "is-dark-mode" : ""}`}
       aria-label="Documents"
     >
       <GlassCard
         className="sidebar-glass"
         contentClassName="sidebar-content"
-        blur={22}
+        blur={15}
         distortion={14}
         chromaticAberration={0}
-        backgroundColor="white"
+        backgroundColor={glassColor}
         backgroundOpacity={0.07}
         borderColor="white"
         borderOpacity={0.46}
@@ -61,8 +65,8 @@ export function Sidebar({
               blur={16}
               distortion={10}
               chromaticAberration={0}
-              backgroundColor="white"
-              backgroundOpacity={0.1}
+              backgroundColor={glassColor}
+              backgroundOpacity={buttonBackgroundOpacity}
               borderColor="white"
               borderOpacity={0.48}
               borderRadius={9}
@@ -77,12 +81,7 @@ export function Sidebar({
               outerLightOpacity={0.04}
               padding="0"
             >
-              <img
-                className="sidebar-icon"
-                src={closeIcon}
-                alt=""
-                aria-hidden="true"
-              />
+              <span className="sidebar-icon" aria-hidden="true" />
             </GlassButton>
           </button>
           <div>

@@ -4,6 +4,7 @@ import type { DocumentMetadata } from "../../types";
 export type SidebarOverlaySnapshot = {
   documents: DocumentMetadata[];
   documentId: string;
+  isDarkMode: boolean;
   status: string;
   onSelectDocument: (documentId: string) => void;
 };
@@ -11,6 +12,7 @@ export type SidebarOverlaySnapshot = {
 let snapshot: SidebarOverlaySnapshot = {
   documents: [],
   documentId: "",
+  isDarkMode: false,
   status: "Loading documents",
   onSelectDocument: () => {},
 };

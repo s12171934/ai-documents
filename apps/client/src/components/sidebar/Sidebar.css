@@ -96,7 +96,15 @@
   width: 21px;
   height: 21px;
   display: block;
-  object-fit: contain;
+  background: currentColor;
+  mask-image: url("../../assets/close.svg");
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: contain;
+  -webkit-mask-image: url("../../assets/close.svg");
+  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
   opacity: 0.96;
 }
 
@@ -170,6 +178,55 @@
   font-size: 0.78rem;
   font-weight: 700;
   text-transform: uppercase;
+}
+
+.sidebar.is-dark-mode .sidebar-glass {
+  color: #ffffff !important;
+  background: rgb(0 0 0 / 72%);
+}
+
+.sidebar.is-dark-mode .sidebar-close-glass {
+  color: #ffffff !important;
+}
+
+.sidebar.is-dark-mode .sidebar-header,
+.sidebar.is-dark-mode .sidebar-header strong,
+.sidebar.is-dark-mode .document-list,
+.sidebar.is-dark-mode .document-item,
+.sidebar.is-dark-mode .document-item strong {
+  color: #ffffff !important;
+}
+
+.sidebar.is-dark-mode .sidebar-icon {
+  background: #ffffff;
+  opacity: 1;
+}
+
+.sidebar.is-dark-mode .document-count,
+.sidebar.is-dark-mode .document-item span {
+  color: rgb(255 255 255 / 72%) !important;
+}
+
+.sidebar.is-dark-mode .document-item {
+  color: #ffffff;
+  background: rgb(255 255 255 / 8%);
+}
+
+.sidebar.is-dark-mode .document-item:hover {
+  background: rgb(255 255 255 / 14%);
+}
+
+.sidebar.is-dark-mode .document-item.is-active {
+  border-color: rgb(255 255 255 / 34%);
+  background: rgb(255 255 255 / 18%);
+}
+
+.sidebar.is-dark-mode .eyebrow {
+  color: #ffffff;
+}
+
+.sidebar.is-dark-mode .sidebar-close:focus-visible {
+  outline-color: rgb(255 255 255 / 78%);
 }
 
 @media (max-width: 760px) {
