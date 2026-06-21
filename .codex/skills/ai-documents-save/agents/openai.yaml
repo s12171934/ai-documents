@@ -1,4 +1,4 @@
 interface:
   display_name: "AI Documents Save"
-  short_description: "Draft HTML and save via ai-documents CLI"
-  default_prompt: "Use $ai-documents-save to create an HTML document and save it with the ai-documents CLI."
+  short_description: "Write docs and save via ai-documents CLI"
+  default_prompt: "Use $ai-documents-save to write a shareable document and save it with the ai-documents CLI."
