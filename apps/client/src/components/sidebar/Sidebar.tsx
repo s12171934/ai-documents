@@ -1,3 +1,4 @@
+import { GlassButton, GlassCard } from "react-glass-ui";
 import type { DocumentMetadata } from "../../types";
 import "./Sidebar.css";
 
@@ -23,41 +24,87 @@ export function Sidebar({
       className={`sidebar ${isOpen ? "is-open" : ""}`}
       aria-label="Documents"
     >
-      <div className="sidebar-header">
-        <div>
-          <p className="eyebrow">AI Documents</p>
-          <strong>Documents</strong>
-        </div>
-        <button
-          className="icon-button"
-          type="button"
-          aria-label="Collapse sidebar"
-          title="Collapse sidebar"
-          onClick={onClose}
-        >
-          x
-        </button>
-      </div>
-
-      <div className="document-count">{status}</div>
-
-      <nav className="document-list">
-        {documents.map((document) => (
+      <GlassCard
+        className="sidebar-glass"
+        contentClassName="sidebar-content"
+        blur={22}
+        distortion={14}
+        chromaticAberration={0}
+        backgroundColor="white"
+        backgroundOpacity={0.07}
+        borderColor="white"
+        borderOpacity={0.46}
+        borderRadius={10}
+        borderSize={1.25}
+        brightness={102}
+        saturation={120}
+        innerLightBlur={12}
+        innerLightSpread={1}
+        innerLightOpacity={0.12}
+        outerLightBlur={18}
+        outerLightSpread={1}
+        outerLightOpacity={0.05}
+        padding="0"
+      >
+        <div className="sidebar-header">
           <button
-            className={
-              document.id === documentId
-                ? "document-item is-active"
-                : "document-item"
-            }
-            key={document.id}
+            className="sidebar-close"
             type="button"
-            onClick={() => onSelectDocument(document.id)}
+            aria-label="Close document list"
+            title="Close document list"
+            onClick={onClose}
           >
-            <strong>{document.id}</strong>
-            <span>{new Date(document.updatedAt).toLocaleString()}</span>
+            <GlassButton
+              className="sidebar-close-glass"
+              contentClassName="sidebar-close-content"
+              blur={16}
+              distortion={10}
+              chromaticAberration={0}
+              backgroundColor="white"
+              backgroundOpacity={0.1}
+              borderColor="white"
+              borderOpacity={0.48}
+              borderRadius={9}
+              borderSize={1.25}
+              brightness={102}
+              saturation={115}
+              innerLightBlur={8}
+              innerLightSpread={1}
+              innerLightOpacity={0.12}
+              outerLightBlur={12}
+              outerLightSpread={1}
+              outerLightOpacity={0.04}
+              padding="0"
+            >
+              x
+            </GlassButton>
           </button>
-        ))}
-      </nav>
+          <div>
+            <p className="eyebrow">AI Documents</p>
+            <strong>Documents</strong>
+          </div>
+        </div>
+
+        <div className="document-count">{status}</div>
+
+        <nav className="document-list">
+          {documents.map((document) => (
+            <button
+              className={
+                document.id === documentId
+                  ? "document-item is-active"
+                  : "document-item"
+              }
+              key={document.id}
+              type="button"
+              onClick={() => onSelectDocument(document.id)}
+            >
+              <strong>{document.id}</strong>
+              <span>{new Date(document.updatedAt).toLocaleString()}</span>
+            </button>
+          ))}
+        </nav>
+      </GlassCard>
     </aside>
   );
 }
