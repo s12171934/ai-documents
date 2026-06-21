@@ -71,6 +71,70 @@ const getDocumentPageUrl = (documentId: string) => {
   return url.toString();
 };
 
+const base64UrlToUint8Array = (value: string) => {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+  const binary = window.atob(padded);
+  const bytes = new Uint8Array(binary.length);
+
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+
+  return bytes;
+};
+
+const registerPushUpdates = async () => {
+  if (
+    !("serviceWorker" in navigator) ||
+    !("PushManager" in window) ||
+    !("Notification" in window)
+  ) {
+    return;
+  }
+
+  const registration = await navigator.serviceWorker.register("/service-worker.js");
+  const permission = await Notification.requestPermission();
+
+  if (permission !== "granted") {
+    return;
+  }
+
+  const existingSubscription = await registration.pushManager.getSubscription();
+
+  if (existingSubscription) {
+    await fetch(`${defaultServerUrl}/push/subscriptions`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(existingSubscription),
+    });
+
+    return;
+  }
+
+  const keyResponse = await fetch(`${defaultServerUrl}/push/vapid-public-key`);
+
+  if (!keyResponse.ok) {
+    return;
+  }
+
+  const { publicKey } = (await keyResponse.json()) as { publicKey: string };
+  const subscription = await registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: base64UrlToUint8Array(publicKey),
+  });
+
+  await fetch(`${defaultServerUrl}/push/subscriptions`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(subscription),
+  });
+};
+
 export function App() {
   const initialDocumentId =
     new URLSearchParams(window.location.search).get("document") ?? "demo";
@@ -79,6 +143,7 @@ export function App() {
   const [documentHtml, setDocumentHtml] = useState("");
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [status, setStatus] = useState("Loading documents");
+  const [refreshToken, setRefreshToken] = useState(0);
   const documentUrl = `${defaultServerUrl}/documents/${encodeURIComponent(documentId)}`;
   const documentPageUrl = getDocumentPageUrl(documentId);
   const currentDocument = documents.find((document) => document.id === documentId);
@@ -95,6 +160,34 @@ export function App() {
 
   useEffect(() => {
     openSidebarOverlay();
+  }, []);
+
+  useEffect(() => {
+    registerPushUpdates().catch(() => {
+      // Push is an enhancement; normal document loading still works without it.
+    });
+  }, []);
+
+  useEffect(() => {
+    const handleServiceWorkerMessage = (event: MessageEvent) => {
+      if (event.data?.type !== "document.updated") {
+        return;
+      }
+
+      const nextDocumentId = event.data.document?.id;
+
+      if (typeof nextDocumentId === "string") {
+        setDocumentId(nextDocumentId);
+      }
+
+      setRefreshToken((current) => current + 1);
+    };
+
+    navigator.serviceWorker?.addEventListener("message", handleServiceWorkerMessage);
+
+    return () => {
+      navigator.serviceWorker?.removeEventListener("message", handleServiceWorkerMessage);
+    };
   }, []);
 
   useEffect(() => {
@@ -132,7 +225,7 @@ export function App() {
       });
 
     return () => controller.abort();
-  }, [documentUrl]);
+  }, [documentUrl, refreshToken]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -178,7 +271,7 @@ export function App() {
       });
 
     return () => controller.abort();
-  }, [documentId]);
+  }, [documentId, refreshToken]);
 
   return (
     <div className={`app ${isDarkMode ? "is-dark-mode" : ""}`}>

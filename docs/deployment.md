@@ -39,6 +39,71 @@ GitHub 저장소의 **Settings → Secrets and variables → Actions → Variabl
 | 환경변수 | 사용 위치 | 예시 | 설명 |
 | --- | --- | --- | --- |
 | `VITE_API_BASE_URL` | `apps/client` | `https://ai-documents-server.<account>.workers.dev` | 클라이언트가 문서 목록과 HTML 문서를 가져올 server Worker URL |
+| `VAPID_PUBLIC_KEY` | `apps/server` | `BD...` | 브라우저 Push API 구독에 사용하는 공개 VAPID 키 |
+| `VAPID_PRIVATE_KEY` | `apps/server` | `w4...` | server Worker가 웹푸시 payload를 서명/암호화할 때 사용하는 비밀 VAPID 키 |
+| `VAPID_SUBJECT` | `apps/server` | `mailto:admin@example.com` | 푸시 서비스에 전달할 연락처 식별자 |
+
+## 배포 서버 추가 설정
+
+웹푸시 자동 갱신을 사용하려면 배포된 server Worker에 VAPID 설정을 추가해야 합니다. 이 값이 없으면 클라이언트의 `/push/vapid-public-key` 요청이 `503 Service Unavailable`로 응답하고, 브라우저 Push API 구독이 생성되지 않습니다.
+
+### 1. VAPID 키 생성
+
+배포 환경마다 한 쌍의 VAPID 키를 생성합니다. 공개키와 비밀키는 함께 쓰는 한 쌍이므로, 공개키만 바꾸거나 비밀키만 바꾸면 기존 브라우저 구독이 깨질 수 있습니다.
+
+```bash
+npx web-push generate-vapid-keys
+```
+
+생성 결과에서 아래 값을 사용합니다.
+
+| 생성값 | 저장 위치 |
+| --- | --- |
+| `Public Key` | `VAPID_PUBLIC_KEY` |
+| `Private Key` | `VAPID_PRIVATE_KEY` |
+
+### 2. Cloudflare Worker Secret 추가
+
+`apps/server` 디렉터리에서 배포 대상 Worker에 secret을 등록합니다.
+
+```bash
+cd apps/server
+wrangler secret put VAPID_PUBLIC_KEY
+wrangler secret put VAPID_PRIVATE_KEY
+wrangler secret put VAPID_SUBJECT
+```
+
+`VAPID_SUBJECT`는 푸시 서비스가 운영자에게 연락할 수 있는 식별자입니다. 보통 아래처럼 설정합니다.
+
+```text
+mailto:admin@example.com
+```
+
+### 3. 클라이언트 서버 주소 확인
+
+Cloudflare Pages 또는 GitHub Actions Variable에 `VITE_API_BASE_URL`이 배포된 server Worker 주소로 설정되어 있어야 합니다.
+
+```text
+VITE_API_BASE_URL=https://ai-documents-server.<account>.workers.dev
+```
+
+이 값이 로컬 주소나 다른 Worker를 가리키면 클라이언트가 잘못된 서버에 구독을 등록하거나 문서를 요청합니다.
+
+### 4. 재배포와 확인
+
+secret과 Pages 변수를 변경한 뒤 server Worker와 client Pages를 다시 배포합니다. 배포 후 아래 요청이 200으로 응답하면 VAPID 공개키 설정이 정상입니다.
+
+```bash
+curl -i https://ai-documents-server.<account>.workers.dev/push/vapid-public-key
+```
+
+정상 응답 예시:
+
+```json
+{"publicKey":"BD..."}
+```
+
+로컬 개발에서는 `apps/server/.dev.vars`에 같은 값을 넣을 수 있습니다. `.dev.vars`는 비밀값을 포함하므로 git에 커밋하지 않습니다.
 
 로컬 개발에서는 클라이언트 예시 파일을 복사해 사용합니다.
 

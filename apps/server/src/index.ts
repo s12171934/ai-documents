@@ -11,15 +11,27 @@ type DocumentMetadata = {
   updatedAt: string;
 };
 
+type PushSubscriptionRecord = {
+  endpoint: string;
+  keys: {
+    p256dh: string;
+    auth: string;
+  };
+};
+
 type Env = {
   DOCUMENTS: R2Bucket;
   DOCUMENT_METADATA: KVNamespace;
   DOCUMENT_COORDINATOR: DurableObjectNamespace<DocumentCoordinator>;
+  VAPID_PUBLIC_KEY?: string;
+  VAPID_PRIVATE_KEY?: string;
+  VAPID_SUBJECT?: string;
 };
 
 const metadataKey = (id: string) => `documents:${id}:metadata`;
 const objectKey = (id: string) => `documents/${id}.html`;
 const documentListKey = "documents:index";
+const pushSubscriptionsKey = "push:subscriptions";
 
 const corsHeaders = {
   "access-control-allow-origin": "*",
@@ -91,6 +103,252 @@ const addDocumentId = async (id: string) => {
   return nextIds;
 };
 
+const base64UrlToBytes = (value: string) => {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+  const binary = atob(padded);
+  const bytes = new Uint8Array(binary.length);
+
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+
+  return bytes;
+};
+
+const bytesToBase64Url = (bytes: ArrayBuffer | Uint8Array) => {
+  const value = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  let binary = "";
+
+  for (const byte of value) {
+    binary += String.fromCharCode(byte);
+  }
+
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+};
+
+const concatBytes = (...chunks: Uint8Array[]) => {
+  const totalLength = chunks.reduce((length, chunk) => length + chunk.byteLength, 0);
+  const bytes = new Uint8Array(totalLength);
+  let offset = 0;
+
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+
+  return bytes;
+};
+
+const toArrayBuffer = (bytes: Uint8Array) => {
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+
+  return copy.buffer;
+};
+
+const readPushSubscriptions = async () =>
+  (await bindings.DOCUMENT_METADATA.get<PushSubscriptionRecord[]>(
+    pushSubscriptionsKey,
+    "json"
+  )) ?? [];
+
+const writePushSubscriptions = async (subscriptions: PushSubscriptionRecord[]) => {
+  await bindings.DOCUMENT_METADATA.put(pushSubscriptionsKey, JSON.stringify(subscriptions));
+};
+
+const savePushSubscription = async (subscription: PushSubscriptionRecord) => {
+  const subscriptions = await readPushSubscriptions();
+  const nextSubscriptions = [
+    ...subscriptions.filter((current) => current.endpoint !== subscription.endpoint),
+    subscription
+  ];
+
+  await writePushSubscriptions(nextSubscriptions);
+};
+
+const deletePushSubscription = async (endpoint: string) => {
+  const subscriptions = await readPushSubscriptions();
+
+  await writePushSubscriptions(
+    subscriptions.filter((subscription) => subscription.endpoint !== endpoint)
+  );
+};
+
+const createVapidToken = async (endpoint: string) => {
+  if (!bindings.VAPID_PUBLIC_KEY || !bindings.VAPID_PRIVATE_KEY) {
+    return null;
+  }
+
+  const publicKey = base64UrlToBytes(bindings.VAPID_PUBLIC_KEY);
+
+  if (publicKey.byteLength !== 65) {
+    throw new Error("VAPID_PUBLIC_KEY must be an uncompressed P-256 public key.");
+  }
+
+  const privateKey = base64UrlToBytes(bindings.VAPID_PRIVATE_KEY);
+  const key = await crypto.subtle.importKey(
+    "jwk",
+    {
+      kty: "EC",
+      crv: "P-256",
+      x: bytesToBase64Url(publicKey.slice(1, 33)),
+      y: bytesToBase64Url(publicKey.slice(33, 65)),
+      d: bytesToBase64Url(privateKey),
+      ext: true
+    },
+    { name: "ECDSA", namedCurve: "P-256" },
+    false,
+    ["sign"]
+  );
+  const now = Math.floor(Date.now() / 1000);
+  const header = bytesToBase64Url(
+    new TextEncoder().encode(JSON.stringify({ typ: "JWT", alg: "ES256" }))
+  );
+  const body = bytesToBase64Url(
+    new TextEncoder().encode(
+      JSON.stringify({
+        aud: new URL(endpoint).origin,
+        exp: now + 12 * 60 * 60,
+        sub: bindings.VAPID_SUBJECT ?? "mailto:admin@example.com"
+      })
+    )
+  );
+  const unsignedToken = `${header}.${body}`;
+  const signature = await crypto.subtle.sign(
+    { name: "ECDSA", hash: "SHA-256" },
+    key,
+    new TextEncoder().encode(unsignedToken)
+  );
+
+  return `${unsignedToken}.${bytesToBase64Url(signature)}`;
+};
+
+const hmac = async (key: ArrayBuffer | Uint8Array, data: Uint8Array) => {
+  const cryptoKey = await crypto.subtle.importKey(
+    "raw",
+    key instanceof Uint8Array ? toArrayBuffer(key) : key,
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+
+  return new Uint8Array(await crypto.subtle.sign("HMAC", cryptoKey, toArrayBuffer(data)));
+};
+
+const encryptPushPayload = async (subscription: PushSubscriptionRecord, payload: unknown) => {
+  const userPublicKey = base64UrlToBytes(subscription.keys.p256dh);
+  const authSecret = base64UrlToBytes(subscription.keys.auth);
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const keyPair = await crypto.subtle.generateKey(
+    { name: "ECDH", namedCurve: "P-256" },
+    true,
+    ["deriveBits"]
+  );
+  const serverPublicKey = new Uint8Array(await crypto.subtle.exportKey("raw", keyPair.publicKey));
+  const importedUserPublicKey = await crypto.subtle.importKey(
+    "raw",
+    userPublicKey,
+    { name: "ECDH", namedCurve: "P-256" },
+    false,
+    []
+  );
+  const sharedSecret = await crypto.subtle.deriveBits(
+    { name: "ECDH", public: importedUserPublicKey },
+    keyPair.privateKey,
+    256
+  );
+  const keyInfo = concatBytes(
+    new TextEncoder().encode("WebPush: info"),
+    new Uint8Array([0]),
+    userPublicKey,
+    serverPublicKey
+  );
+  const inputKeyMaterial = await hmac(
+    await hmac(authSecret, new Uint8Array(sharedSecret)),
+    concatBytes(keyInfo, new Uint8Array([1]))
+  );
+  const pseudoRandomKey = await hmac(salt, inputKeyMaterial);
+  const contentEncryptionKey = (
+    await hmac(
+      pseudoRandomKey,
+      concatBytes(new TextEncoder().encode("Content-Encoding: aes128gcm"), new Uint8Array([0, 1]))
+    )
+  ).slice(0, 16);
+  const nonce = (
+    await hmac(
+      pseudoRandomKey,
+      concatBytes(new TextEncoder().encode("Content-Encoding: nonce"), new Uint8Array([0, 1]))
+    )
+  ).slice(0, 12);
+  const payloadBytes = new TextEncoder().encode(JSON.stringify(payload));
+  const plaintext = concatBytes(payloadBytes, new Uint8Array([2]));
+  const key = await crypto.subtle.importKey("raw", contentEncryptionKey, "AES-GCM", false, [
+    "encrypt"
+  ]);
+  const ciphertext = new Uint8Array(
+    await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce }, key, plaintext)
+  );
+  const recordSize = new Uint8Array([0, 0, 16, 0]);
+
+  return concatBytes(
+    salt,
+    recordSize,
+    new Uint8Array([serverPublicKey.byteLength]),
+    serverPublicKey,
+    ciphertext
+  );
+};
+
+const sendPush = async (subscription: PushSubscriptionRecord, payload: unknown) => {
+  const token = await createVapidToken(subscription.endpoint);
+
+  if (!token || !bindings.VAPID_PUBLIC_KEY) {
+    return { ok: false, remove: false };
+  }
+
+  const body = await encryptPushPayload(subscription, payload);
+  const response = await fetch(subscription.endpoint, {
+    method: "POST",
+    headers: {
+      authorization: `vapid t=${token}, k=${bindings.VAPID_PUBLIC_KEY}`,
+      "content-encoding": "aes128gcm",
+      "content-type": "application/octet-stream",
+      ttl: "60"
+    },
+    body
+  });
+
+  return {
+    ok: response.ok,
+    remove: response.status === 404 || response.status === 410
+  };
+};
+
+const notifyDocumentUpdated = async (metadata: DocumentMetadata) => {
+  const subscriptions = await readPushSubscriptions();
+
+  if (subscriptions.length === 0) return;
+
+  const results = await Promise.allSettled(
+    subscriptions.map((subscription) =>
+      sendPush(subscription, {
+        type: "document.updated",
+        document: metadata
+      })
+    )
+  );
+  const staleEndpoints = results.flatMap((result, index) =>
+    result.status === "fulfilled" && result.value.remove ? [subscriptions[index].endpoint] : []
+  );
+
+  if (staleEndpoints.length > 0) {
+    await writePushSubscriptions(
+      subscriptions.filter((subscription) => !staleEndpoints.includes(subscription.endpoint))
+    );
+  }
+};
+
 const removeDocumentId = async (id: string) => {
   const nextIds = (await readDocumentIds()).filter((documentId) => documentId !== id);
 
@@ -117,6 +375,35 @@ const app = new Elysia({ adapter: CloudflareAdapter })
     return {
       documents: documents.filter((metadata): metadata is DocumentMetadata => Boolean(metadata))
     };
+  })
+  .get("/push/vapid-public-key", () => {
+    if (!bindings.VAPID_PUBLIC_KEY) {
+      return json({ error: "Push is not configured" }, { status: 503 });
+    }
+
+    return { publicKey: bindings.VAPID_PUBLIC_KEY };
+  })
+  .post("/push/subscriptions", async ({ request, status }) => {
+    const subscription = (await request.json().catch(() => null)) as PushSubscriptionRecord | null;
+
+    if (!subscription?.endpoint || !subscription.keys?.p256dh || !subscription.keys?.auth) {
+      return json({ error: "Invalid push subscription" }, { status: 400 });
+    }
+
+    await savePushSubscription(subscription);
+
+    return status(201, { ok: true });
+  })
+  .delete("/push/subscriptions", async ({ request }) => {
+    const body = (await request.json().catch(() => null)) as { endpoint?: string } | null;
+
+    if (!body?.endpoint) {
+      return json({ error: "Missing endpoint" }, { status: 400 });
+    }
+
+    await deletePushSubscription(body.endpoint);
+
+    return { ok: true };
   })
   .post("/documents/:id", async ({ params, request, status }) => {
     const htmlError = requireHtml(request);
@@ -154,6 +441,7 @@ const app = new Elysia({ adapter: CloudflareAdapter })
       method: "POST",
       body: JSON.stringify(metadata)
     });
+    await notifyDocumentUpdated(metadata);
 
     return status(existing ? 200 : 201, metadata);
   })
