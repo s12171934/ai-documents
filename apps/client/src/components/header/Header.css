@@ -29,34 +29,36 @@
 }
 
 .sidebar-fab {
-  position: fixed;
+  position: absolute;
   z-index: 31;
-  top: 29px;
-  left: 30px;
-  min-width: 58px;
+  top: 50%;
+  left: 16px;
+  min-width: 44px;
   height: 38px;
   border: 0;
   border-radius: 0;
   background: transparent;
   padding: 0;
   cursor: pointer;
-  opacity: 0.9;
+  opacity: 1;
   pointer-events: auto;
+  transform: translateY(-50%);
 }
 
 .sidebar-fab-glass {
-  width: 58px !important;
+  width: 44px !important;
   height: 38px !important;
-  color: #102026 !important;
+  color: #06181d !important;
   font: inherit;
-  font-size: 0.82rem;
-  font-weight: 800;
-  text-shadow: 0 1px 0 rgb(255 255 255 / 34%);
+  filter: drop-shadow(0 1px 0 rgb(255 255 255 / 44%));
 }
 
 .sidebar-fab-content {
   width: 100%;
   height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   pointer-events: none;
 }
 
@@ -65,13 +67,172 @@
   pointer-events: none;
 }
 
+.header-actions {
+  position: absolute;
+  z-index: 31;
+  top: 50%;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transform: translateY(-50%);
+}
+
+.header-action {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 38px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.header-action-group {
+  position: relative;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 38px;
+}
+
+.header-action-glass {
+  width: 44px !important;
+  height: 38px !important;
+  color: #06181d !important;
+  font: inherit;
+  filter: drop-shadow(0 1px 0 rgb(255 255 255 / 44%));
+}
+
+.header-action-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.header-action-glass,
+.header-action-glass * {
+  pointer-events: none;
+}
+
+.header-icon {
+  width: 21px;
+  height: 21px;
+  display: block;
+  object-fit: contain;
+  opacity: 0.96;
+}
+
+.sidebar-fab:focus-visible,
+.header-action:focus-visible {
+  outline: 2px solid rgb(6 24 29 / 72%);
+  outline-offset: 3px;
+}
+
+.header-popover {
+  position: absolute;
+  z-index: 32;
+  top: calc(100% + 10px);
+  right: 0;
+  width: min(280px, calc(100vw - 28px));
+  color: #102026;
+  text-align: left;
+}
+
+.header-popover-glass {
+  width: 100% !important;
+  min-height: 0;
+  color: #102026 !important;
+}
+
+.header-popover-glass .glass-ui-border-layer {
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 18%) inset,
+    0 1px 0 rgb(255 255 255 / 34%) inset,
+    0 18px 42px rgb(16 32 38 / 14%);
+}
+
+.header-popover-content {
+  width: 100%;
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+}
+
+.header-popover strong {
+  display: block;
+  font-size: 0.86rem;
+}
+
+.header-popover dl {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.header-popover dl > div {
+  display: grid;
+  gap: 2px;
+}
+
+.header-popover dt {
+  color: #526c75;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.header-popover dd,
+.header-popover p {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.header-popover-share {
+  width: min(300px, calc(100vw - 28px));
+}
+
+.header-popover-button {
+  width: 100%;
+  height: 34px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.header-popover-button-glass {
+  width: 100% !important;
+  height: 34px !important;
+  color: #06181d !important;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.header-popover-button-content {
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.header-popover-button-glass,
+.header-popover-button-glass * {
+  pointer-events: none;
+}
+
 @media screen and (min-width: 768px) {
   .header.is-sidebar-open {
     left: 370px;
-  }
-
-  .header.is-sidebar-open .sidebar-fab {
-    display: none;
   }
 }
 
@@ -87,17 +248,22 @@
     left: 10px;
   }
 
-  .sidebar-fab {
+  .header-actions {
+    right: 12px;
+    gap: 6px;
+  }
+
+  .header-action,
+  .header-action-glass {
+    width: 42px !important;
+  }
+
+  .header-action-group {
+    width: 42px;
+  }
+
+  .header-popover {
     top: auto;
-    bottom: 29px;
-    left: 26px;
-  }
-
-  .header.is-sidebar-open .sidebar-fab {
-    min-width: 38px;
-  }
-
-  .header.is-sidebar-open .sidebar-fab-glass {
-    width: 38px !important;
+    bottom: calc(100% + 10px);
   }
 }

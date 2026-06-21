@@ -55,14 +55,29 @@ const withDocumentChrome = (html: string, documentUrl: string) => {
   return `${baseElement}${documentChromeStyle}${html}`;
 };
 
+const sortDocumentsByUpdatedAt = (documents: DocumentMetadata[]) =>
+  [...documents].sort(
+    (left, right) =>
+      new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime(),
+  );
+
+const getDocumentPageUrl = (documentId: string) => {
+  const url = new URL(window.location.href);
+  url.searchParams.set("document", documentId);
+
+  return url.toString();
+};
+
 export function App() {
-  const searchParams = new URLSearchParams(window.location.search);
-  const initialDocumentId = searchParams.get("document") ?? "demo";
+  const initialDocumentId =
+    new URLSearchParams(window.location.search).get("document") ?? "demo";
   const [documentId, setDocumentId] = useState(initialDocumentId);
   const [documents, setDocuments] = useState<DocumentMetadata[]>([]);
   const [documentHtml, setDocumentHtml] = useState("");
   const [status, setStatus] = useState("Loading documents");
   const documentUrl = `${defaultServerUrl}/documents/${encodeURIComponent(documentId)}`;
+  const documentPageUrl = getDocumentPageUrl(documentId);
+  const currentDocument = documents.find((document) => document.id === documentId);
 
   useEffect(() => {
     setSidebarOverlaySnapshot({
@@ -76,6 +91,10 @@ export function App() {
   useEffect(() => {
     openSidebarOverlay();
   }, []);
+
+  useEffect(() => {
+    window.history.replaceState(null, "", documentPageUrl);
+  }, [documentPageUrl]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -126,18 +145,20 @@ export function App() {
         return response.json() as Promise<{ documents: DocumentMetadata[] }>;
       })
       .then(({ documents }) => {
-        setDocuments(documents);
+        const sortedDocuments = sortDocumentsByUpdatedAt(documents);
+
+        setDocuments(sortedDocuments);
 
         if (
-          documents.length > 0 &&
-          !documents.some((document) => document.id === documentId)
+          sortedDocuments.length > 0 &&
+          !sortedDocuments.some((document) => document.id === documentId)
         ) {
-          setDocumentId(documents[0].id);
+          setDocumentId(sortedDocuments[0].id);
         }
 
         setStatus(
-          documents.length > 0
-            ? `${documents.length} documents`
+          sortedDocuments.length > 0
+            ? `${sortedDocuments.length} documents`
             : "No documents",
         );
       })
@@ -156,7 +177,11 @@ export function App() {
 
   return (
     <div>
-      <Header />
+      <Header
+        currentDocument={currentDocument}
+        documentUrl={documentUrl}
+        documentPageUrl={documentPageUrl}
+      />
       <main className="app-shell">
         <iframe
           className="document-frame"

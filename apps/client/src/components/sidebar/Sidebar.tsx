@@ -1,4 +1,5 @@
 import { GlassButton, GlassCard } from "react-glass-ui";
+import closeIcon from "../../assets/close.svg";
 import type { DocumentMetadata } from "../../types";
 import "./Sidebar.css";
 
@@ -76,7 +77,12 @@ export function Sidebar({
               outerLightOpacity={0.04}
               padding="0"
             >
-              x
+              <img
+                className="sidebar-icon"
+                src={closeIcon}
+                alt=""
+                aria-hidden="true"
+              />
             </GlassButton>
           </button>
           <div>
